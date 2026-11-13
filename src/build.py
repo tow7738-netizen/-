@@ -6,5 +6,5 @@ D['sym']['comps'][0]['d']=sh(D['sym']['comps'][0]['d'])
 for c in D['wm']['comps']: c['d']=sh(c['d']); c['bbox']=[round(float(v),1) for v in c['bbox']]
 for h in D['holes']: h['d']=sh(h['d']); h['bbox']=[round(float(v),1) for v in h['bbox']]
 D['sym']['comps'][0]['bbox']=[float(v) for v in D['sym']['comps'][0]['bbox']]
-t=open('src/template.html').read().replace('__DATA__',json.dumps(D,separators=(',',':')))
-open('soolow-motion.html','w').write(t); print(len(t))
+t=open(sys.argv[2] if len(sys.argv)>2 else 'src/template.html').read().replace('__DATA__',json.dumps(D,separators=(',',':')))
+open(sys.argv[3] if len(sys.argv)>3 else 'soolow-motion.html','w').write(t); print(len(t))

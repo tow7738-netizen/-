@@ -1,0 +1,251 @@
+<title>SOOLOW Reels</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&display=swap">
+<style>
+/* Layout: one 9:16 reels frame centred on a slightly deeper ivory ground; a quiet control line beneath. Single light look by choice. */
+:root{
+  --room:#e9e3d8;      /* page ground around the frame */
+  --ivory:#f4efe6;     /* reels background */
+  --taupe:#a8977b;     /* SOOLOW brand taupe */
+  --line:#cfc4b2;      /* control borders */
+  --ink:#6f6252;       /* control text */
+  --serif-en:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--room);color:var(--ink);font-family:var(--serif-en);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;box-sizing:border-box;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+.stage,.bar{width:min(100%,calc((100vh - 96px) * 9 / 16),540px)}
+.stage{aspect-ratio:9/16;max-width:100%;background:var(--ivory);border-radius:6px;overflow:hidden;box-shadow:0 18px 50px rgba(90,70,40,.16)}
+.stage svg{display:block;width:100%;height:100%}
+.bar{display:flex;align-items:center;gap:12px}
+.bar button{appearance:none;background:none;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:15px;letter-spacing:.08em;padding:5px 14px;border-radius:999px;cursor:pointer;min-width:76px}
+.bar button:hover{border-color:var(--taupe)}
+.bar button:focus-visible,.bar input:focus-visible{outline:2px solid var(--taupe);outline-offset:2px}
+.bar input{flex:1;min-width:0;accent-color:var(--taupe)}
+.bar .tc{font-variant-numeric:tabular-nums;font-size:15px;min-width:5.5ch;text-align:right}
+.ghost{font-family:var(--serif-en);font-weight:300;fill:none;stroke:var(--taupe);stroke-width:1.4}
+</style>
+
+<div class="stage">
+<svg id="sv" viewBox="0 0 1080 1920" role="img" aria-label="술로우 로고 모션: 모래시계 심볼과 쉼표가 들어간 SOOLOW 워드마크">
+  <defs>
+    <radialGradient id="bgG" cx="50%" cy="44%" r="75%">
+      <stop offset="0" stop-color="#f8f4ec"/><stop offset=".7" stop-color="#f3eee5"/><stop offset="1" stop-color="#ebe4d7"/>
+    </radialGradient>
+    <linearGradient id="liq" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfa265"/><stop offset="1" stop-color="#a77c45"/>
+    </linearGradient>
+    <linearGradient id="sandg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ddcfb3"/><stop offset="1" stop-color="#c8b48d"/>
+    </linearGradient>
+    <clipPath id="clipTop"><path id="holeTop"/></clipPath>
+    <clipPath id="clipBot"><path id="holeBot"/></clipPath>
+    <clipPath id="wmClip" clipPathUnits="userSpaceOnUse"></clipPath>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#bgG)"/>
+
+  <circle id="drop" cx="540" cy="0" r="7" fill="var(--taupe)" opacity="0"/>
+  <g id="ripples" fill="none" stroke="var(--taupe)"></g>
+
+  <g id="ghosts">
+    <text class="ghost" id="gS" font-size="330" text-anchor="middle" dominant-baseline="central">S</text>
+    <text class="ghost" id="gO" font-size="330" text-anchor="middle" dominant-baseline="central">O</text>
+    <text class="ghost" id="gW" font-size="330" text-anchor="middle" dominant-baseline="central">W</text>
+  </g>
+
+  <g id="symbol">
+    <g clip-path="url(#clipTop)"><rect id="sandTop" x="150" y="0" width="210" height="0" fill="url(#sandg)"/></g>
+    <g clip-path="url(#clipBot)">
+      <path id="liqBot" fill="url(#liq)" opacity="0"/>
+      <g id="bubbles" fill="none" stroke="#f6e9cf" stroke-width="1.4"></g>
+    </g>
+    <line id="stream" stroke="#c4af88" stroke-width="2.2" stroke-linecap="round" opacity="0"/>
+    <g id="grains" fill="#bfa982"></g>
+    <path id="symFill" fill="var(--taupe)" opacity="0" fill-rule="evenodd"/>
+    <path id="symLine" fill="none" stroke="var(--taupe)" stroke-width="1.6" stroke-linejoin="round"/>
+  </g>
+
+  <g id="wordmark">
+    <g id="wmLetters" fill="var(--taupe)" clip-path="url(#wmClip)"></g>
+    <g id="commaG"><path id="comma" fill="var(--taupe)"/></g>
+    <g id="commaRip" fill="none" stroke="var(--taupe)"></g>
+  </g>
+</svg>
+</div>
+
+<div class="bar">
+  <button id="play" type="button" aria-label="일시정지">Pause</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="타임라인">
+  <span class="tc" id="tc">0.0s</span>
+</div>
+
+<script>
+const DATA = __DATA__;
+const DUR = 23;
+const W = 1080, H = 1920, MX = W / 2;
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const mk = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const set = (el, k, v) => el.setAttribute(k, v);
+const op = (id, v) => $(id).setAttribute("opacity", clamp(v).toFixed(3));
+
+/* easing: soft sine / quint curves only, no snaps */
+const clamp = (x, a=0, b=1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const sio = x => -(Math.cos(Math.PI * x) - 1) / 2;          // ease-in-out sine
+const qio = x => x < .5 ? 16*x**5 : 1 - (-2*x + 2)**5 / 2;  // ease-in-out quint
+const qo = x => 1 - (1 - x)**4;                              // ease-out quart
+const lerp = (a, b, x) => a + (b - a) * x;
+const fadeIO = (t, a, b, c, d) => Math.min(sio(seg(t, a, b)), 1 - sio(seg(t, c, d)));
+const rnd = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+/* geometry */
+const SYM_W = 500, SYM_H = 620;
+const pick = top => DATA.holes.filter(h => Math.abs(h.bbox[0] + h.bbox[2]/2 - 252) < 20).sort((a, b) => top ? a.bbox[1] - b.bbox[1] : b.bbox[1] - a.bbox[1])[0];
+const HT = pick(true), HB = pick(false);
+$("holeTop").setAttribute("d", HT.d); $("holeBot").setAttribute("d", HB.d);
+const topY0 = HT.bbox[1], topY1 = HT.bbox[1] + HT.bbox[3];
+const botY0 = HB.bbox[1], botY1 = HB.bbox[1] + HB.bbox[3];
+const CX = HT.bbox[0] + HT.bbox[2] / 2;
+const st = $("stream"); set(st, "x1", CX); set(st, "x2", CX);
+$("symFill").setAttribute("d", DATA.sym.comps[0].d);
+$("symLine").setAttribute("d", DATA.sym.comps[0].d);
+const LEN = $("symLine").getTotalLength();
+$("symLine").setAttribute("stroke-dasharray", LEN);
+
+const WM = DATA.wm.comps, COMMA_I = 4, letters = [];
+WM.forEach((c, i) => {
+  if (i === COMMA_I) { $("comma").setAttribute("d", c.d); return; }
+  const p = mk("path", { d: c.d }, $("wmLetters"));
+  const r = mk("rect", { x: c.bbox[0] - 8, y: 0, width: c.bbox[2] + 16, height: 0 }, $("wmClip"));
+  letters.push({ p, r, b: c.bbox });
+});
+const CB = WM[COMMA_I].bbox;
+const WM_S = 0.84, WM_X = (W - DATA.wm.w * WM_S) / 2, WM_Y = 1150;
+
+const grains = Array.from({ length: 22 }, () => mk("circle", { r: 1.5 }, $("grains")));
+const bubbles = Array.from({ length: 12 }, () => mk("circle", { r: 3 }, $("bubbles")));
+const ripples = Array.from({ length: 3 }, () => mk("ellipse", { "stroke-width": 1.3, opacity: 0 }, $("ripples")));
+const cRipples = Array.from({ length: 2 }, () => mk("ellipse", { "stroke-width": 1.5, opacity: 0 }, $("commaRip")));
+
+/* timeline (s)
+ 0.3  a drop falls slowly to the centre, ripples spread
+ 2.2  ghost S · O · W gather and fold into the symbol
+ 3.6  outline draws itself, fill rises in
+ 7.4  sand runs, liquor rises, bubbles: brewing time
+12.6  symbol lifts gently to the lockup
+13.6  S O O L appear one by one, then everything rests
+16.2  the comma drips from the hourglass and settles
+18.2  O W continue
+19.5  lockup holds, breathes, fades for the loop */
+const SYM_CY0 = 900, SYM_CY1 = 770, S0 = 1.12, S1 = 0.66;
+
+function render(t) {
+  /* opening drop */
+  const dp = seg(t, 0.3, 1.9);
+  set($("drop"), "cy", lerp(-20, SYM_CY0, dp * dp));
+  op("drop", dp > 0 && dp < 1 ? Math.min(1, dp * 6) : 0);
+  ripples.forEach((r, i) => {
+    const p = seg(t, 1.9 + i * 0.4, 4.4 + i * 0.4);
+    set(r, "cx", MX); set(r, "cy", SYM_CY0);
+    set(r, "rx", qo(p) * (260 + i * 90)); set(r, "ry", qo(p) * (52 + i * 18));
+    set(r, "opacity", p > 0 ? ((1 - p) * 0.6).toFixed(3) : 0);
+  });
+
+  /* ghost letters, stacked as a column then folding to the centre */
+  const gIn = sio(seg(t, 2.2, 3.6)), gFold = qio(seg(t, 3.8, 6.2));
+  [["gS", -400], ["gO", 0], ["gW", 400]].forEach(([id, dy]) => {
+    const y = SYM_CY0 + dy * (1 - gFold) + (1 - gIn) * 24;
+    $(id).setAttribute("transform", `translate(${MX} ${y}) scale(${lerp(1, 0.7, gFold)})`);
+    op(id, gIn * (1 - sio(seg(t, 4.6, 6.4))) * 0.5);
+  });
+
+  /* symbol draw + fill */
+  set($("symLine"), "stroke-dashoffset", (LEN * (1 - qio(seg(t, 3.6, 7.0)))).toFixed(1));
+  op("symLine", t < 3.6 ? 0 : 1 - sio(seg(t, 6.8, 8.2)));
+  op("symFill", sio(seg(t, 6.2, 8.0)));
+
+  /* placement: centre -> lockup */
+  const mv = qio(seg(t, 12.6, 15.0));
+  const s = lerp(S0, S1, mv), cy = lerp(SYM_CY0, SYM_CY1, mv);
+  set($("symbol"), "transform", `translate(${MX - SYM_W * s / 2} ${cy - SYM_H * s / 2}) scale(${s})`);
+
+  /* sand + liquor */
+  const flow = seg(t, 7.6, 13.0), fl = sio(flow);
+  const topLevel = lerp(topY0 + 28, topY1 + 4, fl);
+  set($("sandTop"), "y", topLevel); set($("sandTop"), "height", Math.max(0, topY1 + 10 - topLevel));
+  op("sandTop", sio(seg(t, 7.0, 8.0)));
+  const liqLevel = lerp(botY1 + 2, botY0 + 52, fl);
+  const amp = flow > 0 && flow < 1 ? 1.8 : 0.6;
+  let d = `M ${CX - 110} ${botY1 + 20} L ${CX - 110} ${liqLevel}`;
+  for (let x = -110; x <= 110; x += 10) d += ` L ${CX + x} ${liqLevel + Math.sin(x / 24 + t * 1.8) * amp}`;
+  set($("liqBot"), "d", d + ` L ${CX + 110} ${botY1 + 20} Z`);
+  op("liqBot", sio(seg(t, 7.6, 8.4)));
+  const running = flow > 0 && flow < 0.98;
+  op("stream", running ? Math.min(sio(seg(t, 7.6, 8.4)), 1 - seg(flow, .88, .98)) * 0.9 : 0);
+  set(st, "y1", topY1 - 6); set(st, "y2", liqLevel);
+  grains.forEach((g, i) => {
+    const ph = (t * 1.1 + rnd(i)) % 1;
+    set(g, "cy", lerp(topY1 - 4, liqLevel, ph)); set(g, "cx", CX + (rnd(i + 9) - .5) * 5 * ph);
+    set(g, "opacity", running ? (0.85 * (1 - ph * 0.5) * sio(seg(t, 7.6, 8.4))).toFixed(2) : 0);
+  });
+  bubbles.forEach((b, i) => {
+    const sp = 0.22 + rnd(i + 3) * 0.2;
+    const ph = (((t - 8.4) * sp + rnd(i + 30)) % 1 + 1) % 1;
+    const vis = t > 8.4 && (botY1 - 8) - (liqLevel + 6) > 20 ? 1 : 0;
+    set(b, "cx", CX + (rnd(i + 7) - .5) * 90 * (1 - ph * .3) + Math.sin(ph * 7 + i) * 3);
+    set(b, "cy", lerp(botY1 - 8, liqLevel + 6, ph));
+    set(b, "r", 1.6 + rnd(i + 11) * 3);
+    set(b, "opacity", (vis * Math.sin(Math.PI * ph) * 0.75 * sio(seg(t, 8.4, 9.4))).toFixed(2));
+  });
+
+  /* wordmark */
+  const wy = WM_Y + (1 - sio(seg(t, 13.6, 16))) * 16;
+  set($("wordmark"), "transform", `translate(${WM_X} ${wy}) scale(${WM_S})`);
+  const starts = [13.6, 14.05, 14.5, 14.95, 18.2, 18.65]; // S O O L | , | O W
+  letters.forEach((L, i) => {
+    const p = seg(t, starts[i], starts[i] + 1.6);
+    const wipe = qo(p), top = L.b[1] - 12, h = L.b[3] + 24;
+    set(L.r, "y", top + h * (1 - wipe)); set(L.r, "height", h * wipe);
+    set(L.p, "transform", `translate(0 ${(1 - sio(p)) * 22})`);
+    set(L.p, "opacity", sio(seg(t, starts[i], starts[i] + 1.1)).toFixed(3));
+  });
+
+  /* the comma: drips out of the hourglass, settles softly */
+  const ccx = CB[0] + CB[2] * 0.45, ccy = CB[1] + CB[3] * 0.6;
+  const fromY = ((SYM_CY1 + SYM_H * S1 / 2 - 30) - WM_Y) / WM_S - ccy; // bottom of symbol, in wordmark space
+  const fromX = (MX - WM_X) / WM_S - ccx;
+  const grow = sio(seg(t, 16.2, 16.9));
+  const fall = seg(t, 16.8, 18.0);
+  const fy = fromY * (1 - fall * fall), fx = fromX * (1 - sio(fall));
+  const rot = (1 - sio(fall)) * -24 + Math.sin(fall * Math.PI) * 6;
+  const land = seg(t, 18.0, 18.6);
+  const sq = 1 - Math.sin(Math.PI * land) * 0.06;
+  const sc = lerp(0.35, 1, grow);
+  set($("commaG"), "transform", `translate(${fx} ${fy}) translate(${ccx} ${ccy}) rotate(${rot}) scale(${sc / sq} ${sc * sq}) translate(${-ccx} ${-ccy})`);
+  op("commaG", grow);
+  cRipples.forEach((r, i) => {
+    const p = seg(t, 18.0 + i * 0.35, 20.2 + i * 0.35);
+    set(r, "cx", ccx); set(r, "cy", CB[1] + CB[3] + 6);
+    set(r, "rx", qo(p) * (130 + i * 80)); set(r, "ry", qo(p) * (14 + i * 7));
+    set(r, "opacity", p > 0 ? ((1 - p) * 0.7).toFixed(3) : 0);
+  });
+
+  /* fade out for loop */
+  const out = 1 - sio(seg(t, 21.4, 22.8));
+  op("symbol", out); op("wordmark", out);
+}
+
+/* playback */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let playing = !reduce, t0 = performance.now(), tNow = reduce ? 20 : 0;
+const scrub = $("scrub"), tc = $("tc"), btn = $("play");
+function show(t) { render(t); scrub.value = Math.round(t / DUR * 1000); tc.textContent = t.toFixed(1) + "s"; }
+function frame(now) { if (playing) { tNow = ((now - t0) / 1000) % DUR; show(tNow); } requestAnimationFrame(frame); }
+function setPlaying(p) { playing = p; btn.textContent = p ? "Pause" : "Play"; btn.setAttribute("aria-label", p ? "일시정지" : "재생"); if (p) t0 = performance.now() - tNow * 1000; }
+btn.addEventListener("click", () => setPlaying(!playing));
+scrub.addEventListener("input", () => { setPlaying(false); tNow = scrub.value / 1000 * DUR; show(tNow); });
+setPlaying(playing); show(tNow); requestAnimationFrame(frame);
+window.__render = t => { playing = false; render(t); };
+</script>
